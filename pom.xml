@@ -19,6 +19,7 @@
     <modules>
         <module>auth-service</module>
         <module>song-service</module>
+        <module>discovery-server</module>
     </modules>
 
     <properties>

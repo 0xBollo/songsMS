@@ -23,7 +23,7 @@ public class PlaylistService {
 
     private final PlaylistRepository playlistRepository;
     private final SongRepository songRepository;
-    private final WebClient webClient;
+    private final WebClient.Builder webClientBuilder;
 
     public PlaylistResponse getPlaylistWithId(int id) throws ResourceNotFoundException {
         Optional<Playlist> playlistOptional = playlistRepository.findById(id);
@@ -43,8 +43,8 @@ public class PlaylistService {
     public List<PlaylistResponse> getPlaylistsFromUserForUser(String fromUserId, String forUserId)
             throws ResourceNotFoundException {
         // Check if the user exists
-        Boolean userExists = webClient.get()
-                .uri(String.format("http://localhost:8081/rest/users?existsById=%s", fromUserId))
+        Boolean userExists = webClientBuilder.build().get()
+                .uri(String.format("http://auth-service/rest/users?existsById=%s", fromUserId))
                 .retrieve()
                 .bodyToMono(Boolean.class)
                 .block();
