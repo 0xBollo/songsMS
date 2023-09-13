@@ -41,13 +41,9 @@ public class PlaylistController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PlaylistResponse>> getSongListsFromUser(@RequestParam("userId") String fromUserId,
+    public ResponseEntity<List<PlaylistResponse>> getPlaylistsFromUser(@RequestParam("userId") String fromUserId,
                                                                        @RequestHeader HttpHeaders headers)
             throws AuthorizationException, ResourceNotFoundException {
-
-        // TODO Synchronous request to the user service as to whether the user exists
-        /*if (! userRepository.existsById(fromUserId))
-            throw new ResourceNotFoundException("User", "ID", fromUserId);*/
 
         String forUserId = authorizeRequest(headers);   // throws AuthorizationException
 
@@ -58,7 +54,7 @@ public class PlaylistController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> postSongList(@RequestBody PlaylistRequest playlistRequest,
+    public ResponseEntity<Void> postPlaylist(@RequestBody PlaylistRequest playlistRequest,
                                              @RequestHeader HttpHeaders headers)
             throws AuthorizationException, InvalidAttributeValueException {
         String userId = authorizeRequest(headers);   // throws AuthorizationException
@@ -69,7 +65,7 @@ public class PlaylistController {
     }
 
     @DeleteMapping(path = "/{id}")
-    public ResponseEntity<Void> deleteSongList(@PathVariable("id") Integer id, @RequestHeader HttpHeaders headers)
+    public ResponseEntity<Void> deletePlaylist(@PathVariable("id") Integer id, @RequestHeader HttpHeaders headers)
             throws InvalidIdException, AuthorizationException, ForbiddenResourceAccessException {
         if (id < 1)
             throw new InvalidIdException("ID cannot be less than 1");

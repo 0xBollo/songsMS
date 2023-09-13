@@ -12,6 +12,7 @@ public interface PlaylistRepository extends CrudRepository<Playlist, Integer> {
 
     List<Playlist> findByOwnerId(String ownerId);
     List<Playlist> findByOwnerIdAndIsPrivate(String ownerId, boolean isPrivate);
+
     @Query("SELECT p.ownerId FROM Playlist p WHERE p.id = :id")
     String findOwnerIdById(Integer id);
 }

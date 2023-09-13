@@ -7,9 +7,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.io.ClassPathResource;
 
-import java.io.File;
+import java.io.InputStream;
 import java.util.Arrays;
 
 
@@ -20,16 +19,17 @@ public class SongServiceApplication {
 		SpringApplication.run(SongServiceApplication.class, args);
 	}
 
-	// FIXME File songs.json not found
-	/*@Bean
+	@Bean
 	public CommandLineRunner insertUsersIntoDB(SongRepository songRepository) {
 		return args -> {
 			songRepository.deleteAll();
 
-			ObjectMapper objectMapper = new ObjectMapper();
-			Song[] songs = objectMapper.readValue(new File("songs.json"), Song[].class);
+			try (InputStream inputStream = getClass().getResourceAsStream("/songs.json")) {
+				ObjectMapper objectMapper = new ObjectMapper();
+				Song[] songs = objectMapper.readValue(inputStream, Song[].class);
 
-			songRepository.saveAll(Arrays.asList(songs));
+				songRepository.saveAll(Arrays.asList(songs));
+			}
 		};
-	}*/
+	}
 }

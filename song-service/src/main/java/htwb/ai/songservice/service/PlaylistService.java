@@ -10,16 +10,20 @@ import htwb.ai.songservice.repository.PlaylistRepository;
 import htwb.ai.songservice.repository.SongRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+
 @RequiredArgsConstructor
 @Service
 public class PlaylistService {
+
     private final PlaylistRepository playlistRepository;
     private final SongRepository songRepository;
+    private final WebClient webClient;
 
     public PlaylistResponse getPlaylistWithId(int id) throws ResourceNotFoundException {
         Optional<Playlist> playlistOptional = playlistRepository.findById(id);
@@ -36,7 +40,18 @@ public class PlaylistService {
                 .build();
     }
 
-    public List<PlaylistResponse> getPlaylistsFromUserForUser(String fromUserId, String forUserId) {
+    public List<PlaylistResponse> getPlaylistsFromUserForUser(String fromUserId, String forUserId)
+            throws ResourceNotFoundException {
+        // Check if the user exists
+        Boolean userExists = webClient.get()
+                .uri(String.format("http://localhost:8081/rest/users?existsById=%s", fromUserId))
+                .retrieve()
+                .bodyToMono(Boolean.class)
+                .block();
+
+        if (Boolean.FALSE.equals(userExists))
+            throw new ResourceNotFoundException("User", "ID", fromUserId);
+
         List<Playlist> playlists =  fromUserId.equals(forUserId) ?
                 playlistRepository.findByOwnerId(fromUserId) :
                 playlistRepository.findByOwnerIdAndIsPrivate(fromUserId, false);
