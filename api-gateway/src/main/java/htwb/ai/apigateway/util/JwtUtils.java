@@ -1,6 +1,7 @@
-package htwb.ai.songservice.util;
+package htwb.ai.apigateway.util;
 
-import htwb.ai.songservice.exception.AuthorizationException;
+import htwb.ai.apigateway.exception.AuthorizationException;
+
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 

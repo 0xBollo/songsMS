@@ -1,15 +1,12 @@
 package htwb.ai.songservice.controller;
 
-import static org.springframework.http.HttpHeaders.*;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.*;
-import static htwb.ai.songservice.util.JwtUtils.*;
 
 import htwb.ai.songservice.exception.*;
 import htwb.ai.songservice.model.Song;
 import htwb.ai.songservice.repository.SongRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -25,20 +22,15 @@ public class SongController {
     private final SongRepository songRepository;
 
     @GetMapping
-    public ResponseEntity<List<Song>> getAllSongs(@RequestHeader HttpHeaders headers)
-            throws AuthorizationException {
-        authorizeRequest(headers);   // throws AuthorizationException
-
+    public ResponseEntity<List<Song>> getAllSongs() {
         List<Song> songs = songRepository.findAll();
         return ResponseEntity.status(OK).contentType(APPLICATION_JSON)
                 .body(songs);
     }
 
     @GetMapping(path = "/{id}")
-    public ResponseEntity<Song> getSongWithId(@PathVariable("id") Integer id,
-                                              @RequestHeader HttpHeaders headers)
-            throws AuthorizationException, InvalidIdException, ResourceNotFoundException {
-        authorizeRequest(headers);   // throws AuthorizationException
+    public ResponseEntity<Song> getSongWithId(@PathVariable("id") Integer id)
+            throws InvalidIdException, ResourceNotFoundException {
 
         if (id < 1)
             throw new InvalidIdException("ID cannot be less than 1");
@@ -53,9 +45,8 @@ public class SongController {
     }
 
     @PostMapping
-    public ResponseEntity<Integer> createSong(@RequestBody Song song, @RequestHeader HttpHeaders headers)
-            throws AuthorizationException, ForbiddenIdAssignmentException, InvalidAttributeValueException {
-        authorizeRequest(headers);   // throws AuthorizationException
+    public ResponseEntity<Integer> createSong(@RequestBody Song song)
+            throws ForbiddenIdAssignmentException, InvalidAttributeValueException {
 
         if (song.getId() != null)
             throw new ForbiddenIdAssignmentException("Song must not have an ID yet");
@@ -71,10 +62,8 @@ public class SongController {
     }
 
     @PutMapping(path = "/{id}")
-    public ResponseEntity<Void> updateSong(@PathVariable("id") Integer id, @RequestBody Song songUpdate,
-                                           @RequestHeader HttpHeaders headers)
-            throws AuthorizationException, ResourceNotFoundException, InvalidAttributeValueException {
-        authorizeRequest(headers);   // throws AuthorizationException
+    public ResponseEntity<Void> updateSong(@PathVariable("id") Integer id, @RequestBody Song songUpdate)
+            throws ResourceNotFoundException, InvalidAttributeValueException {
 
         if (id < 1)
             throw new InvalidIdException("ID cannot be less than 1");
@@ -100,9 +89,7 @@ public class SongController {
     }
 
     @DeleteMapping(path = "/{id}")
-    public ResponseEntity<Void> deleteSong(@PathVariable("id") Integer id, @RequestHeader HttpHeaders headers)
-            throws AuthorizationException, ResourceNotFoundException {
-        authorizeRequest(headers);   // throws AuthorizationException
+    public ResponseEntity<Void> deleteSong(@PathVariable("id") Integer id) throws ResourceNotFoundException {
 
         if (id < 1)
             throw new InvalidIdException("ID cannot be less than 1");
@@ -119,13 +106,5 @@ public class SongController {
                 song.getArtist() == null || song.getArtist().isBlank() ||
                 song.getLabel() == null || song.getLabel().isBlank() ||
                 song.getReleased() < 1600 || song.getReleased() > LocalDate.now().getYear());
-    }
-
-    private void authorizeRequest(HttpHeaders headers) throws AuthorizationException {
-        String token = headers.getFirst(AUTHORIZATION);
-        if (token == null)
-            throw new AuthorizationException("Access Token required");
-
-        getUserIdFromToken(token);   // throws AuthorizationException
     }
 }
