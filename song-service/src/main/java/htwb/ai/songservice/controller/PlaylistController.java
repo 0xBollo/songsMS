@@ -5,7 +5,6 @@ import htwb.ai.songservice.dto.PlaylistResponse;
 import htwb.ai.songservice.exception.*;
 import htwb.ai.songservice.service.PlaylistService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -29,7 +28,6 @@ public class PlaylistController {
         if (id < 1)
             throw new InvalidIdException("ID cannot be less than 1");
 
-        //String userId = authorizeRequest(headers);   // throws AuthorizationException
         PlaylistResponse playlistResponse = playlistService.getPlaylistWithId(id);   // throws ResourceNotFoundException
 
         if (playlistResponse.getIsPrivate() && (! playlistResponse.getOwnerId().equals(userId)))
@@ -43,8 +41,6 @@ public class PlaylistController {
                                                                        @RequestHeader("Subject") String forUserId)
             throws ResourceNotFoundException {
 
-        //String forUserId = authorizeRequest(headers);   // throws AuthorizationException
-
         List<PlaylistResponse> playlistResponses =
                 playlistService.getPlaylistsFromUserForUser(fromUserId, forUserId);
 
@@ -55,11 +51,22 @@ public class PlaylistController {
     public ResponseEntity<Void> postPlaylist(@RequestBody PlaylistRequest playlistRequest,
                                              @RequestHeader("Subject") String userId)
             throws InvalidAttributeValueException {
-        //String userId = authorizeRequest(headers);   // throws AuthorizationException
-
         int id = playlistService.createPlaylist(playlistRequest, userId);   // throws InvalidAttributeValueException
 
         return ResponseEntity.created(UriComponentsBuilder.fromPath("/rest/playlists/{id}").build(id)).build();
+    }
+
+    @PutMapping(path = "/{id}")
+    public ResponseEntity<Void> updatePlaylist(@PathVariable("id") Integer id, @RequestHeader("Subject") String userId,
+                                               @RequestBody PlaylistRequest playlistUpdate)
+            throws InvalidIdException, ResourceNotFoundException, InvalidAttributeValueException,
+                ForbiddenResourceAccessException {
+        if (id < 1)
+            throw new InvalidIdException("ID cannot be less than 1");
+
+        playlistService.updatePlaylist(id, playlistUpdate, userId);
+
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping(path = "/{id}")
@@ -68,10 +75,8 @@ public class PlaylistController {
         if (id < 1)
             throw new InvalidIdException("ID cannot be less than 1");
 
-        //String userId = authorizeRequest(headers);   // throws AuthorizationException
-
-        playlistService.deletePlaylist(id, userId);   // throws ResourceNotFoundException, ForbiddenRessourceAccessException
-
+        playlistService.deletePlaylist(id, userId);   // throws ResourceNotFoundException,
+                                                      // ForbiddenRessourceAccessException
         return ResponseEntity.noContent().build();
     }
 }

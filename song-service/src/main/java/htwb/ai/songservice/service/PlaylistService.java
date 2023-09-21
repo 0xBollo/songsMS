@@ -87,12 +87,37 @@ public class PlaylistService {
         return playlistRepository.save(playlist).getId();
     }
 
+    public void updatePlaylist(int id, PlaylistRequest playlistUpdate, String userId)
+            throws InvalidAttributeValueException, ResourceNotFoundException, ForbiddenResourceAccessException {
+        if (! isValidPlaylistRequest(playlistUpdate))
+            throw new InvalidAttributeValueException("Missing or empty attributes");
+
+        Optional<Playlist> playlistOptional = playlistRepository.findById(id);
+        if (playlistOptional.isEmpty())
+            throw new ResourceNotFoundException("Playlist", "ID", id);
+        Playlist playlist = playlistOptional.get();
+
+        if (! playlist.getOwnerId().equals(userId))
+            throw new ForbiddenResourceAccessException("Playlist", "ID", id);
+
+        playlist.setName(playlistUpdate.getName());
+        playlist.setIsPrivate(playlistUpdate.getIsPrivate());
+        playlist.setSongs(playlistUpdate.getSongs());
+
+        playlist.getSongs().forEach(song -> {
+            if ((! songRepository.existsBySong(song)) || Collections.frequency(playlist.getSongs(), song) > 1)
+                throw new InvalidAttributeValueException("Contains non existing song");
+        });
+
+        playlistRepository.save(playlist);
+    }
+
     public void deletePlaylist(int playlistId, String ownerId)
             throws ResourceNotFoundException, ForbiddenResourceAccessException {
         if (! playlistRepository.existsById(playlistId))
             throw new ResourceNotFoundException("Playlist", "ID", playlistId);
 
-        if (! ownerId.equals(playlistRepository.findOwnerIdById(playlistId)))
+        if (! ownerId.equals(playlistRepository.findOwnerIdByPlaylistId(playlistId)))
             throw new ForbiddenResourceAccessException("Playlist", "ID", playlistId);
 
         playlistRepository.deleteById(playlistId);

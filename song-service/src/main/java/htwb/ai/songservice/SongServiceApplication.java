@@ -20,7 +20,7 @@ public class SongServiceApplication {
 	}
 
 	@Bean
-	public CommandLineRunner insertUsersIntoDB(SongRepository songRepository) {
+	public CommandLineRunner insertSongsIntoDB(SongRepository songRepository) {
 		return args -> {
 			songRepository.deleteAll();
 
@@ -28,7 +28,7 @@ public class SongServiceApplication {
 				ObjectMapper objectMapper = new ObjectMapper();
 				Song[] songs = objectMapper.readValue(inputStream, Song[].class);
 
-				songRepository.saveAll(Arrays.asList(songs));
+				Arrays.stream(songs).forEach(songRepository::saveWithId);
 			}
 		};
 	}

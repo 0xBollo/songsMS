@@ -63,7 +63,8 @@ public class SongController {
 
     @PutMapping(path = "/{id}")
     public ResponseEntity<Void> updateSong(@PathVariable("id") Integer id, @RequestBody Song songUpdate)
-            throws ResourceNotFoundException, InvalidAttributeValueException {
+            throws InvalidIdException, ResourceNotFoundException, InvalidAttributeValueException,
+                IdMismatchException {
 
         if (id < 1)
             throw new InvalidIdException("ID cannot be less than 1");
@@ -89,7 +90,8 @@ public class SongController {
     }
 
     @DeleteMapping(path = "/{id}")
-    public ResponseEntity<Void> deleteSong(@PathVariable("id") Integer id) throws ResourceNotFoundException {
+    public ResponseEntity<Void> deleteSong(@PathVariable("id") Integer id)
+            throws InvalidIdException, ResourceNotFoundException {
 
         if (id < 1)
             throw new InvalidIdException("ID cannot be less than 1");
