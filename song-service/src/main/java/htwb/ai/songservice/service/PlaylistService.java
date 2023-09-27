@@ -32,12 +32,16 @@ public class PlaylistService {
     @Value("${rabbitmq.routing-key.song-retrievals}")
     private String songRetrievalsRoutingKey;
 
-    public PlaylistResponse getPlaylistWithId(int id, String subject) throws ResourceNotFoundException {
+    public PlaylistResponse getPlaylistWithId(int id, String subject)
+            throws ResourceNotFoundException, ForbiddenResourceAccessException {
         Optional<Playlist> playlistOptional = playlistRepository.findById(id);
         if (playlistOptional.isEmpty())
             throw new ResourceNotFoundException("Playlist", "ID", id);
 
         Playlist playlist = playlistOptional.get();
+
+        if (playlist.getIsPrivate() && (! playlist.getOwnerId().equals(subject)))
+            throw new ForbiddenResourceAccessException("Playlist", "ID", id);
 
         produceSongRetrievedMessages(playlist, subject);
 
@@ -146,6 +150,7 @@ public class PlaylistService {
                     .songId(song.getId())
                     .userId(subject)
                     .build();
+            System.out.printf("%n%n%n%n%nRETRIEVED SONG WITH ID = %d%n%n%n%n%n", song.getId());
             rabbitTemplate.convertAndSend(exchangeName, songRetrievalsRoutingKey, songRetrievedMessage);
         });
     }

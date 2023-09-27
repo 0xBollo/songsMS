@@ -30,8 +30,8 @@ public class PlaylistController {
 
         PlaylistResponse playlistResponse = playlistService.getPlaylistWithId(id, userId);   // throws ResourceNotFoundException
 
-        if (playlistResponse.getIsPrivate() && (! playlistResponse.getOwnerId().equals(userId)))
-            throw new ForbiddenResourceAccessException("Playlist", "ID", id);
+//        if (playlistResponse.getIsPrivate() && (! playlistResponse.getOwnerId().equals(userId)))
+//            throw new ForbiddenResourceAccessException("Playlist", "ID", id);
 
         return ResponseEntity.status(OK).contentType(APPLICATION_JSON).body(playlistResponse);
     }
