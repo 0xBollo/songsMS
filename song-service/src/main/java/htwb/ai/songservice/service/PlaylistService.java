@@ -1,7 +1,6 @@
 package htwb.ai.songservice.service;
 
-import htwb.ai.songservice.dto.PlaylistRequest;
-import htwb.ai.songservice.dto.PlaylistResponse;
+import htwb.ai.songservice.dto.*;
 import htwb.ai.songservice.exception.ForbiddenResourceAccessException;
 import htwb.ai.songservice.exception.InvalidAttributeValueException;
 import htwb.ai.songservice.exception.ResourceNotFoundException;
@@ -9,6 +8,8 @@ import htwb.ai.songservice.model.Playlist;
 import htwb.ai.songservice.repository.PlaylistRepository;
 import htwb.ai.songservice.repository.SongRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -24,13 +25,22 @@ public class PlaylistService {
     private final PlaylistRepository playlistRepository;
     private final SongRepository songRepository;
     private final WebClient.Builder webClientBuilder;
+    private final RabbitTemplate rabbitTemplate;
 
-    public PlaylistResponse getPlaylistWithId(int id) throws ResourceNotFoundException {
+    @Value("${rabbitmq.exchange.name}")
+    private String exchangeName;
+    @Value("${rabbitmq.routing-key.song-retrievals}")
+    private String songRetrievalsRoutingKey;
+
+    public PlaylistResponse getPlaylistWithId(int id, String subject) throws ResourceNotFoundException {
         Optional<Playlist> playlistOptional = playlistRepository.findById(id);
         if (playlistOptional.isEmpty())
             throw new ResourceNotFoundException("Playlist", "ID", id);
 
         Playlist playlist = playlistOptional.get();
+
+        produceSongRetrievedMessages(playlist, subject);
+
         return PlaylistResponse.builder()
                 .id(playlist.getId())
                 .ownerId(playlist.getOwnerId())
@@ -55,6 +65,8 @@ public class PlaylistService {
         List<Playlist> playlists =  fromUserId.equals(forUserId) ?
                 playlistRepository.findByOwnerId(fromUserId) :
                 playlistRepository.findByOwnerIdAndIsPrivate(fromUserId, false);
+
+        playlists.forEach(playlist -> produceSongRetrievedMessages(playlist, forUserId));
 
         return playlists.stream()
                 .map(playlist ->
@@ -126,5 +138,15 @@ public class PlaylistService {
     private boolean isValidPlaylistRequest(PlaylistRequest playlistRequest) {
         return ! (playlistRequest.getName() == null || playlistRequest.getName().isBlank() ||
                 playlistRequest.getIsPrivate() == null || playlistRequest.getSongs() == null);
+    }
+
+    private void produceSongRetrievedMessages(Playlist playlist, String subject) {
+        playlist.getSongs().forEach(song -> {
+            SongRetrievedMessage songRetrievedMessage = SongRetrievedMessage.builder()
+                    .songId(song.getId())
+                    .userId(subject)
+                    .build();
+            rabbitTemplate.convertAndSend(exchangeName, songRetrievalsRoutingKey, songRetrievedMessage);
+        });
     }
 }

@@ -28,7 +28,7 @@ public class PlaylistController {
         if (id < 1)
             throw new InvalidIdException("ID cannot be less than 1");
 
-        PlaylistResponse playlistResponse = playlistService.getPlaylistWithId(id);   // throws ResourceNotFoundException
+        PlaylistResponse playlistResponse = playlistService.getPlaylistWithId(id, userId);   // throws ResourceNotFoundException
 
         if (playlistResponse.getIsPrivate() && (! playlistResponse.getOwnerId().equals(userId)))
             throw new ForbiddenResourceAccessException("Playlist", "ID", id);

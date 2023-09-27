@@ -20,9 +20,7 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 public class AuthorizationGatewayFilterFactory
         extends AbstractGatewayFilterFactory<AuthorizationGatewayFilterFactory.Config> {
 
-    @NoArgsConstructor @Getter @Setter
     public static class Config {
-        private boolean setSubjectHeader;
     }
 
     public AuthorizationGatewayFilterFactory() {
@@ -36,20 +34,12 @@ public class AuthorizationGatewayFilterFactory
 
             String userId = authorizeRequest(request.getHeaders());
 
-            if (! config.isSetSubjectHeader())
-                return chain.filter(exchange);
-
             ServerHttpRequest modifiedRequest = request.mutate()
                     .header("Subject", userId)
                     .build();
 
             return chain.filter(exchange.mutate().request(modifiedRequest).build());
         }, 1);
-    }
-
-    @Override
-    public List<String> shortcutFieldOrder() {
-        return List.of("setSubjectHeader");
     }
 
     private String authorizeRequest(HttpHeaders headers) throws AuthorizationException {

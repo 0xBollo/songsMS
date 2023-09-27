@@ -3,10 +3,16 @@ package htwb.ai.songservice.controller;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.*;
 
+import htwb.ai.songservice.dto.SongDeletedMessage;
+import htwb.ai.songservice.dto.SongMessage;
+import htwb.ai.songservice.dto.SongRetrievedMessage;
+import htwb.ai.songservice.dto.SongUpdatedMessage;
 import htwb.ai.songservice.exception.*;
 import htwb.ai.songservice.model.Song;
 import htwb.ai.songservice.repository.SongRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -20,16 +26,29 @@ import java.util.Optional;
 public class SongController {
 
     private final SongRepository songRepository;
+    private final RabbitTemplate rabbitTemplate;
+
+    @Value("${rabbitmq.exchange.name}")
+    private String exchangeName;
+    @Value("${rabbitmq.routing-key.song-retrievals}")
+    private String songRetrievalsRoutingKey;
+    @Value("${rabbitmq.routing-key.song-updates}")
+    private String songUpdatesRoutingKey;
+    @Value("${rabbitmq.routing-key.song-deletions}")
+    private String songDeletionsRoutingKey;
 
     @GetMapping
-    public ResponseEntity<List<Song>> getAllSongs() {
+    public ResponseEntity<List<Song>> getAllSongs(@RequestHeader("Subject") String subject) {
         List<Song> songs = songRepository.findAll();
+
+        songs.forEach(song -> produceSongRetrievedMessage(song, subject));
+
         return ResponseEntity.status(OK).contentType(APPLICATION_JSON)
                 .body(songs);
     }
 
     @GetMapping(path = "/{id}")
-    public ResponseEntity<Song> getSongWithId(@PathVariable("id") Integer id)
+    public ResponseEntity<Song> getSongWithId(@PathVariable("id") Integer id, @RequestHeader("Subject") String subject)
             throws InvalidIdException, ResourceNotFoundException {
 
         if (id < 1)
@@ -40,12 +59,19 @@ public class SongController {
         if (songOptional.isEmpty())
             throw new ResourceNotFoundException("Song", "ID", id);
 
+        // Produce RabbitMQ Message
+        SongRetrievedMessage songRetrievedMessage = SongRetrievedMessage.builder()
+                        .songId(songOptional.get().getId())
+                        .userId(subject)
+                        .build();
+        rabbitTemplate.convertAndSend(exchangeName, songRetrievalsRoutingKey, songRetrievedMessage);
+
         return ResponseEntity.status(OK).contentType(APPLICATION_JSON)
                 .body(songOptional.get());
     }
 
     @PostMapping
-    public ResponseEntity<Integer> createSong(@RequestBody Song song)
+    public ResponseEntity<Integer> createSong(@RequestBody Song song, @RequestHeader("Subject") String subject)
             throws ForbiddenIdAssignmentException, InvalidAttributeValueException {
 
         if (song.getId() != null)
@@ -55,14 +81,31 @@ public class SongController {
             throw new InvalidAttributeValueException("Attributes must not be empty " +
                     "and released year must be between 1600 and now");
 
-        int songId = songRepository.save(song).getId();
+        int songId = songRepository.save(song).getId();  // Wenn ich produceSongUpdatedMessage verwenden möchte, dann muss der song eine Id haben
+
+        // Produce RabbitMQ Message
+        SongUpdatedMessage songUpdatedMessage = SongUpdatedMessage.builder()
+                .userId(subject)
+                .songMessage(
+                        SongMessage.builder()
+                                .id(songId)
+                                .title(song.getTitle())
+                                .artist(song.getArtist())
+                                .label(song.getLabel())
+                                .released(song.getReleased())
+                                .build()
+                )
+                .build();
+        rabbitTemplate.convertAndSend(exchangeName, songUpdatesRoutingKey, songUpdatedMessage);
+
         return ResponseEntity.status(CREATED)
                 .location(UriComponentsBuilder.fromPath("/rest/songs/{id}").build(songId))
                 .build();
     }
 
     @PutMapping(path = "/{id}")
-    public ResponseEntity<Void> updateSong(@PathVariable("id") Integer id, @RequestBody Song songUpdate)
+    public ResponseEntity<Void> updateSong(@PathVariable("id") Integer id, @RequestBody Song songUpdate,
+                                           @RequestHeader("Subject") String subject)
             throws InvalidIdException, ResourceNotFoundException, InvalidAttributeValueException,
                 IdMismatchException {
 
@@ -86,6 +129,21 @@ public class SongController {
         song.setReleased(songUpdate.getReleased());
         songRepository.save(song);
 
+        // Produce RabbitMQ Message
+        SongUpdatedMessage songUpdatedMessage = SongUpdatedMessage.builder()
+                .userId(subject)
+                .songMessage(
+                        SongMessage.builder()
+                                .id(song.getId())
+                                .title(song.getTitle())
+                                .artist(song.getArtist())
+                                .label(song.getLabel())
+                                .released(song.getReleased())
+                                .build()
+                )
+                .build();
+        rabbitTemplate.convertAndSend(exchangeName, songUpdatesRoutingKey, songUpdatedMessage);
+
         return ResponseEntity.status(NO_CONTENT).build();
     }
 
@@ -100,6 +158,11 @@ public class SongController {
             throw new ResourceNotFoundException("Song", "ID", id);
 
         songRepository.deleteById(id);
+
+        // Produce RabbitMQ Message
+        SongDeletedMessage songDeletedMessage = new SongDeletedMessage(id);
+        rabbitTemplate.convertAndSend(exchangeName, songDeletionsRoutingKey, songDeletedMessage);
+
         return ResponseEntity.status(NO_CONTENT).build();
     }
 
@@ -108,5 +171,34 @@ public class SongController {
                 song.getArtist() == null || song.getArtist().isBlank() ||
                 song.getLabel() == null || song.getLabel().isBlank() ||
                 song.getReleased() < 1600 || song.getReleased() > LocalDate.now().getYear());
+    }
+
+    private void produceSongRetrievedMessage(Song song, String subject) {
+        SongRetrievedMessage songRetrievedMessage = SongRetrievedMessage.builder()
+                .songId(song.getId())
+                .userId(subject)
+                .build();
+        rabbitTemplate.convertAndSend(exchangeName, songRetrievalsRoutingKey, songRetrievedMessage);
+    }
+
+    private void produceSongUpdatedMessage(Song song, String subject) {
+        SongUpdatedMessage songUpdatedMessage = SongUpdatedMessage.builder()
+                .userId(subject)
+                .songMessage(
+                        SongMessage.builder()
+                                .id(song.getId())
+                                .title(song.getTitle())
+                                .artist(song.getArtist())
+                                .label(song.getLabel())
+                                .released(song.getReleased())
+                                .build()
+                )
+                .build();
+        rabbitTemplate.convertAndSend(exchangeName, songUpdatesRoutingKey, songUpdatedMessage);
+    }
+
+    private void produceSongDeletedMessage(Integer songId) {
+        SongDeletedMessage songDeletedMessage = new SongDeletedMessage(songId);
+        rabbitTemplate.convertAndSend(exchangeName, songDeletionsRoutingKey, songDeletedMessage);
     }
 }
