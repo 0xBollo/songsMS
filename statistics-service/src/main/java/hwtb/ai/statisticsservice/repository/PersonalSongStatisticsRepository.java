@@ -13,7 +13,7 @@ public interface PersonalSongStatisticsRepository extends MongoRepository<Person
     @Query("{'userId': ?0, 'songId': ?1}")
     Optional<PersonalSongStatistics> findByUserIdAndSongId(String userId, Integer songId);
 
-    @Query(value = "{}", sort = "{ retrievals: -1 }")
+    //@Query(value = "{}", sort = "{ retrievals: -1 }")
     List<PersonalSongStatistics> findTop3ByOrderByRetrievalsDesc();
 
     void deleteAllBySongId(Integer songId);

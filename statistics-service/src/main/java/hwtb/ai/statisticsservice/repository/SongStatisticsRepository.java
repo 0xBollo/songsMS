@@ -11,7 +11,7 @@ public interface SongStatisticsRepository extends MongoRepository<SongStatistics
 
     Optional<SongStatistics> findBySongId(Integer songId);
 
-    @Query(value = "{}", sort = "{ retrievals: -1 }")
+    //@Query(value = "{}", sort = "{ retrievals: -1 }")
     List<SongStatistics> findTop3ByOrderByRetrievalsDesc();
 
     void deleteBySongId(Integer songId);
