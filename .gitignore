@@ -2,6 +2,9 @@
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+/auth-service-postgres-data
+/song-service-postgres-data
+/statistics-service-mongo-data
 
 ### IntelliJ IDEA ###
 .idea/
