@@ -3,7 +3,6 @@ version: '3'
 services:
 
   auth-service-postgres:
-    container_name: auth-service-postgres
     image: postgres:16.0-alpine3.18
     environment:
       - POSTGRES_USER=postgres
@@ -12,12 +11,10 @@ services:
     volumes:
       - ./auth-service-postgres-data:/var/lib/postgresql/data
     ports:
-      - "5433:5433"
-    command: -p 5433
+      - "5433:5432"
     restart: unless-stopped
 
   song-service-postgres:
-    container_name: song-service-postgres
     image: postgres:16.0-alpine3.18
     environment:
       - POSTGRES_USER=postgres
@@ -26,21 +23,18 @@ services:
     volumes:
       - ./song-service-postgres-data:/var/lib/postgresql/data
     ports:
-      - "5434:5434"
-    command: -p 5434
+      - "5434:5432"
     restart: unless-stopped
 
   statistics-service-mongo:
-    container_name: statistics-service-mongo
     image: mongo:7.0.2-jammy
     volumes:
       - ./statistics-service-mongo-data:/data/db
     ports:
-      - "27017:27017"
+      - "27018:27017"
     restart: unless-stopped
 
   message-broker:
-    container_name: message-broker
     image: rabbitmq:3.12.7-management
     environment:
       - RABBITMQ_DEFAULT_USER=guest
@@ -50,7 +44,6 @@ services:
       - "5672:5672"
 
   discovery-server:
-    container_name: discovery-server
     image: mabocontainer/songs-ms-discovery-server:1.0
     pull_policy: always
     environment:
@@ -59,7 +52,6 @@ services:
       - "8761:8761"
 
   api-gateway:
-    container_name: api-gateway
     image: mabocontainer/songs-ms-api-gateway:1.0
     pull_policy: always
     environment:
@@ -70,7 +62,6 @@ services:
       - discovery-server
 
   auth-service:
-    container_name: auth-service
     image: mabocontainer/songs-ms-auth-service:1.0
     pull_policy: always
     environment:
@@ -81,7 +72,6 @@ services:
       - api-gateway
 
   song-service:
-    container_name: song-service
     image: mabocontainer/songs-ms-song-service:1.0
     pull_policy: always
     environment:
@@ -94,7 +84,6 @@ services:
       - auth-service
 
   statistics-service:
-    container_name: statistics-service
     image: mabocontainer/songs-ms-statistics-service:1.0
     pull_policy: always
     environment:
