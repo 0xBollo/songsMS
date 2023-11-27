@@ -27,4 +27,8 @@ public interface SongRepository extends CrudRepository<Song, Integer> {
     @Query(value = "INSERT INTO songs (id, title, artist, label, released) VALUES (:#{#song.id}, :#{#song.title}, " +
             ":#{#song.artist}, :#{#song.label}, :#{#song.released})", nativeQuery = true)
     void saveWithId(@Param("song") Song song);
+
+    @Query(value = "SELECT setval(pg_get_serial_sequence('songs', 'id'), COALESCE(MAX(id), 0) + 1, false) FROM songs",
+            nativeQuery = true)
+    void syncSequence();
 }

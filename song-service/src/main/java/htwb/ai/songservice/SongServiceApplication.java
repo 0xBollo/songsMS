@@ -40,6 +40,8 @@ public class SongServiceApplication {
 					produceSongUpdatedMessage(song, rabbitTemplate);
 				});
 			}
+
+			songRepository.syncSequence();
 		};
 	}
 
