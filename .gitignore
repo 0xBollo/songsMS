@@ -5,6 +5,7 @@
 /auth-service-postgres-data
 /song-service-postgres-data
 /statistics-service-mongo-data
+.env
 
 ### IntelliJ IDEA ###
 .idea/

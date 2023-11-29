@@ -6,7 +6,7 @@ services:
     image: postgres:16.0-alpine3.18
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=${AUTH_SERVICE_POSTGRES_PASSWORD}
       - POSTGRES_DB=auth_service
     volumes:
       - ./auth-service-postgres-data:/var/lib/postgresql/data
@@ -18,7 +18,7 @@ services:
     image: postgres:16.0-alpine3.18
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_PASSWORD=${SONG_SERVICE_POSTGRES_PASSWORD}
       - POSTGRES_DB=song_service
     volumes:
       - ./song-service-postgres-data:/var/lib/postgresql/data
@@ -28,6 +28,10 @@ services:
 
   statistics-service-mongo:
     image: mongo:7.0.2-jammy
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=mongo
+      - MONGO_INITDB_ROOT_PASSWORD=${STATISTICS_SERVICE_MONGO_PASSWORD}
+      - MONGO_INITDB_DATABASE=statistics-service
     volumes:
       - ./statistics-service-mongo-data:/data/db
     ports:
@@ -35,13 +39,14 @@ services:
     restart: unless-stopped
 
   message-broker:
-    image: rabbitmq:3.12.7-management
+    image: rabbitmq:3.12.7-management-alpine
     environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_USER=rabbit
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
     ports:
       - "15672:15672"
       - "5672:5672"
+    restart: unless-stopped
 
   discovery-server:
     image: mabocontainer/songs-ms-discovery-server:1.0
@@ -56,6 +61,7 @@ services:
     pull_policy: always
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=${API_GATEWAY_PORT}
     ports:
       - "8080:8080"
     depends_on:
@@ -66,30 +72,38 @@ services:
     pull_policy: always
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_PASSWORD=${AUTH_SERVICE_POSTGRES_PASSWORD}
     depends_on:
       - auth-service-postgres
       - discovery-server
       - api-gateway
+    restart: on-failure:8
 
   song-service:
     image: mabocontainer/songs-ms-song-service:1.0
     pull_policy: always
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_PASSWORD=${SONG_SERVICE_POSTGRES_PASSWORD}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
     depends_on:
       - song-service-postgres
       - message-broker
       - discovery-server
       - api-gateway
       - auth-service
+    restart: on-failure:8
 
   statistics-service:
     image: mabocontainer/songs-ms-statistics-service:1.0
     pull_policy: always
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATA_MONGODB_PASSWORD=${STATISTICS_SERVICE_MONGO_PASSWORD}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
     depends_on:
       - statistics-service-mongo
       - message-broker
       - discovery-server
       - api-gateway
+    restart: on-failure:8

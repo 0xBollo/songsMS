@@ -15,8 +15,8 @@ Requirements: JDK 17, Maven, Git, Docker
 `docker run -d --rm -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=song_service -p 5434:5432 postgres:16.0-alpine3.18`
 7. Start the local Mongo instance for the statistics service.\
 `docker run -d --rm -p 27018:27017 mongo:7.0.2-jammy`
-8. Start the local RabbitMQ instance.
-`docker run -d --rm --name songs_rabbit -e RABBITMQ_DEFAULT_USER=guest -e RABBITMQ_DEFAULT_PASS=guest -p 15672:15672 -p 5672:5672 rabbitmq:3.12.7-management`
+8. Start the local RabbitMQ instance.\
+`docker run -d --rm --name songs_rabbit -e RABBITMQ_DEFAULT_USER=rabbit -e RABBITMQ_DEFAULT_PASS=rabbit -p 15672:15672 -p 5672:5672 rabbitmq:3.12.7-management`
 9. Build the project.\
 `mvn clean package`
 10. Restart the RabbitMQ container.\
