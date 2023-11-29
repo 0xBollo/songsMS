@@ -62,6 +62,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SERVER_PORT=${API_GATEWAY_PORT}
+      - SIGNING_KEY
     ports:
       - "8080:8080"
     depends_on:
@@ -73,6 +74,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_PASSWORD=${AUTH_SERVICE_POSTGRES_PASSWORD}
+      - SIGNING_KEY
     depends_on:
       - auth-service-postgres
       - discovery-server

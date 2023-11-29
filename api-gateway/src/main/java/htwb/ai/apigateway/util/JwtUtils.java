@@ -9,13 +9,12 @@ import javax.crypto.SecretKey;
 
 public class JwtUtils {
 
-    private static final SecretKey SECRET_KEY =
-            Keys.hmacShaKeyFor("WcQhbn6#^qdD5uG#bPX#7gt&Ef54G8$%H^Y&vC3r".getBytes());
+    public static String getUserIdFromToken(String signingKey, String token) {
+        SecretKey secretKey = Keys.hmacShaKeyFor(signingKey.getBytes());
 
-    public static String getUserIdFromToken(String token) {
         try {
             return Jwts.parserBuilder()
-                    .setSigningKey(SECRET_KEY)
+                    .setSigningKey(secretKey)
                     .build()
                     .parseClaimsJws(token)
                     .getBody()

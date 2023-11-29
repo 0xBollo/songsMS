@@ -9,10 +9,8 @@ import java.util.Date;
 
 public class JwtUtils {
 
-    private static final SecretKey SECRET_KEY =
-            Keys.hmacShaKeyFor("WcQhbn6#^qdD5uG#bPX#7gt&Ef54G8$%H^Y&vC3r".getBytes());
-
-    public static String generateToken(String userId, long validity) {
+    public static String generateToken(String signingKey, String userId, long validity) {
+        SecretKey secretKey = Keys.hmacShaKeyFor(signingKey.getBytes());
         long now = System.currentTimeMillis();
         long expiration = now + validity;
 
@@ -20,7 +18,7 @@ public class JwtUtils {
                 .setSubject(userId)
                 .setIssuedAt(new Date(now))
                 .setExpiration(new Date(expiration))
-                .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
+                .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 }

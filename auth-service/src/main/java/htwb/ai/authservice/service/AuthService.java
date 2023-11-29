@@ -7,6 +7,7 @@ import htwb.ai.authservice.exception.ResourceNotFoundException;
 import htwb.ai.authservice.model.User;
 import htwb.ai.authservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -18,6 +19,8 @@ import static htwb.ai.authservice.util.JwtUtils.generateToken;
 public class AuthService {
 
     private final UserRepository userRepository;
+    @Value("${signing.key}")
+    private String signingKey;
 
     public String authenticate(UserRequest userRequest)
             throws InvalidAttributeValueException, ResourceNotFoundException, AuthorizationException {
@@ -33,6 +36,6 @@ public class AuthService {
         if (! user.getPassword().equals(userRequest.getPassword()))
             throw new AuthorizationException("Wrong password");
 
-        return generateToken(user.getId(), 1000*60*60*24);
+        return generateToken(signingKey, user.getId(), 1000*60*60*24);
     }
 }
