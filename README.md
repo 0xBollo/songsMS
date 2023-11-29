@@ -34,11 +34,13 @@ Requirements: JDK 17, Maven, Git, Docker
 
 ## Run Locally With Docker Compose
 Requirements: Docker, Docker Compose
-1. Download the `docker-compose.yml` from the root-directory of this repository and move it to a directory where
-you want to run the project.
+1. Download the `docker-compose.yml` and the `.env.example` from the root-directory of this repository and move them 
+to a directory where you want to run the project.
 2. Open a terminal and navigate to this directory.\
 `cd <directory-with-docker-compose.yml>`
-3. Start the container setup.\
+3. Rename the `.env.example` to `.env`.\
+`mv .env.example .env`
+4. Start the container setup.\
 `docker-compose up -d`
 
 
